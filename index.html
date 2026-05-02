@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barbearia do Vitinho • Rio de Janeiro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-black text-white">
+
+    <!-- HEADER -->
+    <header class="site-header sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
+
+            <!-- Logo + Indicador -->
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="flex items-center gap-2 cursor-pointer flex-shrink-0" onclick="showHero(); closeMobileMenu()">
+                    <img src="icone 3.png" alt="Logo Barbearia Vitinho" style="height:34px;width:auto;object-fit:contain;filter:drop-shadow(0 0 6px rgba(197,155,77,0.4));">
+                    <div class="logo-font text-lg sm:text-2xl font-black tracking-tighter gold-text logo-glow leading-none">
+                        VITINHO<span class="text-white ml-1">BARBER</span>
+                    </div>
+                </div>
+                <div id="realtimeIndicator" class="disconnected flex-shrink-0">
+                    <span class="dot"></span>
+                    <span id="realtimeLabel" class="hidden sm:inline">Conectando...</span>
+                </div>
+            </div>
+
+            <!-- Desktop Nav -->
+            <nav class="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-bold tracking-widest flex-shrink-0">
+                <button onclick="showHero()" class="hover:text-gold transition">INÍCIO</button>
+                <button onclick="showSection('services')" class="hover:text-gold transition">SERVIÇOS</button>
+                <button onclick="showSection('client')" class="text-gold border border-gold/30 px-4 py-2 rounded-lg hover:bg-gold hover:text-black transition">AGENDAR</button>
+            </nav>
+
+            <!-- Admin + Hamburger -->
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <button onclick="showAdminModal()" class="text-gray-600 hover:text-gold transition text-lg">
+                    <i class="fa-solid fa-lock-open"></i>
+                </button>
+                <button id="hamburgerBtn" onclick="toggleMobileMenu()" class="md:hidden flex flex-col justify-center items-center w-8 h-8 gap-[5px]" aria-label="Menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Drawer -->
+        <div id="mobileMenu" class="mobile-menu-drawer md:hidden">
+            <nav class="flex flex-col gap-1 p-4">
+                <button onclick="showHero(); closeMobileMenu()" class="mobile-nav-item">
+                    <i class="fa-solid fa-home w-5 mr-2"></i>INÍCIO
+                </button>
+                <button onclick="showSection('services'); closeMobileMenu()" class="mobile-nav-item">
+                    <i class="fa-solid fa-scissors w-5 mr-2"></i>SERVIÇOS
+                </button>
+                <button onclick="showSection('client'); closeMobileMenu()" class="mobile-nav-item-gold">
+                    <i class="fa-solid fa-calendar-check w-5 mr-2"></i>AGENDAR AGORA
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section id="hero" class="hero-bg flex items-center justify-center px-4 py-14 sm:py-20" style="min-height: calc(100vh - 60px);">
+        <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center relative z-10">
+            <div class="text-center lg:text-left">
+                <div class="inline-block px-4 py-1 rounded-full bg-gold/10 border border-gold/20 text-gold text-xs font-bold tracking-[0.2em] mb-5">
+                    Agende seu corte na:
+                </div>
+                <div class="mb-4">
+                    <img src="icone 1.png" alt="Ícone Barbearia Vitinho" class="hero-icon inline-block" style="filter:drop-shadow(0 0 12px rgba(197,155,77,0.5));">
+                </div>
+                <h1 class="logo-font text-4xl sm:text-6xl lg:text-7xl font-black leading-none mb-6">
+                    Corte e resenha<br>
+                    <span class="gold-text">Garantida.</span>
+                </h1>
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+                    <button onclick="showSection('client')" class="btn-gold px-6 sm:px-8 py-4 rounded-xl text-base w-full sm:w-auto">
+                        <span>AGENDAR AGORA</span>
+                    </button>
+                    <button onclick="showSection('services')" class="btn-dark px-6 sm:px-8 py-4 rounded-xl text-base font-bold w-full sm:w-auto">
+                        VER SERVIÇOS
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative hidden lg:block">
+                <div class="hero-carousel-frame relative w-full aspect-[4/5] rounded-3xl overflow-hidden border border-gold/20 shadow-2xl">
+                    <img id="heroCarSlide1" src="imagem 1.jpeg" class="hero-car-slide absolute inset-0 w-full h-full transition-opacity duration-1000 opacity-100 z-10" alt="Barber 1">
+                    <img id="heroCarSlide2" src="imagem 2.jpeg" class="hero-car-slide absolute inset-0 w-full h-full transition-opacity duration-1000 opacity-0 z-0" alt="Barber 2">
+                    <img id="heroCarSlide3" src="imagem 3.jpeg" class="hero-car-slide absolute inset-0 w-full h-full transition-opacity duration-1000 opacity-0 z-0" alt="Barber 3">
+                    <img id="heroCarSlide4" src="imagem 4.jpeg" class="hero-car-slide absolute inset-0 w-full h-full transition-opacity duration-1000 opacity-0 z-0" alt="Barber 4">
+                    <img id="heroCarSlide5" src="imagem 5.jpeg" class="hero-car-slide absolute inset-0 w-full h-full transition-opacity duration-1000 opacity-0 z-0" alt="Barber 5">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-20"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SERVICES SECTION -->
+    <section id="services-section" class="hidden py-14 sm:py-20 px-4 bg-black relative overflow-hidden">
+        <div class="max-w-7xl mx-auto relative z-10">
+
+            <!-- Cabeçalho (div separada, corretamente fechada) -->
+            <div class="text-center mb-10 sm:mb-14">
+                <h2 class="section-title text-3xl sm:text-4xl font-bold gold-text mb-4">NOSSOS SERVIÇOS</h2>
+                <div class="gold-divider w-24 mx-auto mb-6"></div>
+                <div class="flex justify-center">
+                    <img src="icone 2.png" alt="Barbearia do Vitinho" style="height:90px;width:auto;object-fit:contain;filter:drop-shadow(0 0 14px rgba(197,155,77,0.5));">
+                </div>
+            </div>
+
+            <!-- Grid de serviços -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">✂️</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">CORTE</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Só Tesoura</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Corte clássico executado inteiramente na tesoura para um acabamento natural.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 35</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">💇‍♂️</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">CORTE</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Máquina e Tesoura</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Combinação perfeita de máquina e tesoura para um resultado moderno e preciso.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 30</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">🪒</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">CORTE</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Máquina e Navalha</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Acabamento na navalha para um contorno afiado e impecável.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 25</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">💈</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">CORTE</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Somente com Pente</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Corte leve e natural feito apenas com pente, ideal para ajustes rápidos.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 18</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">🧔</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">BARBA</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Barba Desenhada</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Design de barba com toalha quente, raspagem do pé e finalização na navalha.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 15</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">🧑</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">ACABAMENTO</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Pé</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Acabamento do pé do cabelo para manter o visual sempre alinhado.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 10</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">👁️</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">DETALHE</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Sobrancelha</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Design de sobrancelha para um olhar mais definido e expressivo.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 5</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">🧏‍♂️</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">SIMPLES</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Listra simples</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Serviço básico rápido, sem frescura. Só o essencial.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 2</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">⚫</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">COR</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Pintura de Preto</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Coloração preta para rejuvenescer e uniformizar o visual.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 20</span>
+                </div>
+
+                <div class="service-card p-6 sm:p-7 rounded-3xl flex flex-col">
+                    <div class="flex justify-center mb-4"><span style="font-size:48px;line-height:1;">🌟</span></div>
+                    <span class="text-xs font-bold text-gray-500 tracking-widest mb-2">PREMIUM</span>
+                    <h3 class="text-lg font-bold text-white mb-1">Reflexo</h3>
+                    <p class="text-gray-500 text-sm mb-5 flex-1">Técnica de iluminação para destacar o corte e o estilo com muito charme.</p>
+                    <span class="text-2xl font-bold gold-text">R$ 45</span>
+                </div>
+
+            </div>
+
+            <div class="mt-10 sm:mt-12 text-center">
+                <button onclick="showSection('client')" class="btn-gold px-8 sm:px-10 py-4 rounded-xl font-bold w-full sm:w-auto">
+                    <span>AGENDAR AGORA</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- CLIENT BOOKING SECTION -->
+    <section id="client-section" class="hidden py-14 sm:py-20 px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-8 sm:mb-12">
+                <h2 class="section-title text-3xl sm:text-4xl font-bold gold-text mb-4">AGENDAMENTO</h2>
+                <p class="text-gray-500">Escolha o melhor horário para você.</p>
+            </div>
+
+            <div class="stat-card p-5 sm:p-8 rounded-3xl">
+                <form id="bookingForm" class="space-y-5 sm:space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Seu Nome</label>
+                            <input type="text" id="clientName" placeholder="Como quer ser chamado?" 
+                                class="w-full bg-black/50 border border-white/10 rounded-xl px-4 sm:px-5 py-3.5 sm:py-4 focus:outline-none focus:border-gold transition text-white text-base">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">WhatsApp</label>
+                            <input type="tel" id="clientPhone" placeholder="(21) 99999-9999" 
+                                class="w-full bg-black/50 border border-white/10 rounded-xl px-4 sm:px-5 py-3.5 sm:py-4 focus:outline-none focus:border-gold transition text-white text-base">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Serviço Desejado</label>
+                        <select id="service" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 sm:px-5 py-3.5 sm:py-4 focus:outline-none focus:border-gold transition text-white appearance-none text-base">
+                            <option value="">Selecione um serviço</option>
+                            <optgroup label="✂️ Cortes">
+                                <option value="Só tesoura">Só Tesoura — R$ 35</option>
+                                <option value="Máquina e tesoura">Máquina e Tesoura — R$ 30</option>
+                                <option value="Máquina e navalha">Máquina e Navalha — R$ 25</option>
+                                <option value="Somente com pente">Somente com Pente — R$ 18</option>
+                            </optgroup>
+                            <optgroup label="🪒 Barba & Acabamento">
+                                <option value="Barba desenhada e raspando todo o pé">Barba Desenhada e raspando todo o Pé — R$ 15</option>
+                                <option value="Pé">Pé — R$ 10</option>
+                                <option value="Sobrancelha">Sobrancelha — R$ 5</option>
+                            </optgroup>
+                            <optgroup label="🎨 Cor & Premium">
+                                <option value="Pintura de preto">Pintura de Preto — R$ 20</option>
+                                <option value="Reflexo">Reflexo — R$ 45</option>
+                            </optgroup>
+                            <optgroup label="⚡ Outros">
+                                <option value="Lista simples">Lista Simples — R$ 2</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Data</label>
+                        <input type="date" id="bookingDate" 
+                            class="w-full bg-black/50 border border-white/10 rounded-xl px-4 sm:px-5 py-3.5 sm:py-4 focus:outline-none focus:border-gold transition text-white text-base">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Horários Disponíveis</label>
+                        <div class="slot-legend">
+                            <div class="slot-legend-item"><div class="slot-legend-dot" style="border: 1px solid var(--gold);"></div>Livre</div>
+                            <div class="slot-legend-item"><div class="slot-legend-dot" style="background: #1a1a1a; border:1px solid #333;"></div>Ocupado</div>
+                            <div class="slot-legend-item"><div class="slot-legend-dot" style="background: #3d1010; border:1px solid #8b1c1c;"></div>Bloqueado</div>
+                        </div>
+                        <div id="timeSlots" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+                            <!-- Slots gerados via JS -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ADMIN MODAL -->
+    <div id="adminModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+        <div class="modal-box p-6 sm:p-8 rounded-2xl w-full max-w-md">
+            <h2 class="section-title text-2xl font-bold gold-text mb-6">Acesso Restrito</h2>
+            <input type="password" id="adminPassword" placeholder="Digite a senha" 
+                class="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 mb-5 focus:outline-none focus:border-gold text-white text-base">
+            <div class="flex gap-3">
+                <button onclick="loginAdmin()" class="flex-1 btn-gold px-6 py-3 rounded-xl font-bold"><span>Entrar</span></button>
+                <button onclick="closeAdminModal()" class="flex-1 btn-dark px-6 py-3 rounded-xl font-bold">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="adminDashboard" class="hidden min-h-screen bg-black">
+        <div class="sticky top-0 z-40 bg-black/90 border-b border-gold/20 backdrop-blur-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-4">
+                <div>
+                    <h1 class="logo-font text-xl sm:text-2xl gold-text">DASHBOARD</h1>
+                    <p class="text-gray-500 text-xs sm:text-sm">Gerenciamento Administrativo</p>
+                </div>
+                <button onclick="logoutAdmin()" class="bg-red-900/20 text-red-500 border border-red-900/30 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold hover:bg-red-900 hover:text-white transition flex items-center gap-2 text-xs sm:text-sm whitespace-nowrap">
+                    <i class="fa-solid fa-sign-out"></i>
+                    <span class="hidden sm:inline">Sair</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
+            <!-- Tabs -->
+            <div class="flex gap-1 sm:gap-4 mb-6 sm:mb-8 border-b border-white/5 overflow-x-auto scrollbar-none -mx-3 sm:mx-0 px-3 sm:px-0">
+                <button onclick="switchDashboardTab('overview', event)" class="dashboard-tab active whitespace-nowrap px-3 sm:px-4 py-2.5 font-semibold flex items-center gap-1.5 text-xs sm:text-sm">
+                    <i class="fa-solid fa-chart-line"></i> <span class="hidden sm:inline">Visão </span>Geral
+                </button>
+                <button onclick="switchDashboardTab('appointments', event)" class="dashboard-tab whitespace-nowrap px-3 sm:px-4 py-2.5 font-semibold flex items-center gap-1.5 text-xs sm:text-sm">
+                    <i class="fa-solid fa-calendar-check"></i> <span class="hidden sm:inline">Agenda</span><span class="sm:hidden">Agenda</span>
+                </button>
+                <button onclick="switchDashboardTab('analytics', event)" class="dashboard-tab whitespace-nowrap px-3 sm:px-4 py-2.5 font-semibold flex items-center gap-1.5 text-xs sm:text-sm">
+                    <i class="fa-solid fa-chart-pie"></i> Analytics
+                </button>
+                <button onclick="switchDashboardTab('crm', event)" class="dashboard-tab whitespace-nowrap px-3 sm:px-4 py-2.5 font-semibold flex items-center gap-1.5 text-xs sm:text-sm">
+                    <i class="fa-solid fa-users"></i> CRM
+                </button>
+                <button onclick="switchDashboardTab('settings', event)" class="dashboard-tab whitespace-nowrap px-3 sm:px-4 py-2.5 font-semibold flex items-center gap-1.5 text-xs sm:text-sm">
+                    <i class="fa-solid fa-cog"></i> <span class="hidden sm:inline">Config.</span>
+                </button>
+            </div>
+
+            <!-- TAB: OVERVIEW -->
+            <div id="tab-overview" class="dashboard-content">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <p class="text-gray-500 text-xs uppercase tracking-widest mb-1">Receita Total</p>
+                        <p id="totalRevenue" class="text-xl sm:text-3xl font-bold gold-text">R$ 0,00</p>
+                    </div>
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <p class="text-gray-500 text-xs uppercase tracking-widest mb-1">Agend. Ativos</p>
+                        <p id="activeAppointments" class="text-xl sm:text-3xl font-bold text-green-500">0</p>
+                    </div>
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <p class="text-gray-500 text-xs uppercase tracking-widest mb-1">Clientes</p>
+                        <p id="uniqueClients" class="text-xl sm:text-3xl font-bold text-blue-500">0</p>
+                    </div>
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <p class="text-gray-500 text-xs uppercase tracking-widest mb-1">Popular</p>
+                        <p id="popularService" class="text-sm sm:text-xl font-bold text-white truncate">—</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <h3 class="font-bold mb-4 text-gray-400 text-sm sm:text-base">Distribuição de Receita</h3>
+                        <div class="chart-container"><canvas id="serviceChart"></canvas></div>
+                    </div>
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <h3 class="font-bold mb-4 text-gray-400 text-sm sm:text-base">Agendamentos por Dia</h3>
+                        <div class="chart-container"><canvas id="dailyChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: APPOINTMENTS -->
+            <div id="tab-appointments" class="dashboard-content hidden">
+                <div id="adminAppointmentsList" class="space-y-3 sm:space-y-4"></div>
+            </div>
+
+            <!-- TAB: ANALYTICS -->
+            <div id="tab-analytics" class="dashboard-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <h3 class="font-bold mb-1 text-gray-400 text-sm sm:text-base">Receita Semanal</h3>
+                        <p id="weekRevenue" class="text-xl sm:text-2xl font-bold gold-text mb-4">R$ 0,00</p>
+                        <div class="chart-container"><canvas id="serviceDistributionChart"></canvas></div>
+                    </div>
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <h3 class="font-bold mb-1 text-gray-400 text-sm sm:text-base">Receita Mensal</h3>
+                        <p id="monthRevenue" class="text-xl sm:text-2xl font-bold gold-text mb-4">R$ 0,00</p>
+                        <div class="chart-container"><canvas id="hourlyChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: CRM -->
+            <div id="tab-crm" class="dashboard-content hidden">
+                <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 sm:mb-6">
+                        <h3 class="font-bold text-lg sm:text-xl text-white">Base de Clientes</h3>
+                        <select id="crmFilter" onchange="updateCRMTable()" class="bg-black border border-white/10 rounded-lg px-4 py-2 text-sm text-gray-400 focus:outline-none focus:border-gold w-full sm:w-auto">
+                            <option value="">Todos os clientes</option>
+                            <option value="frequent">Frequentes (3+)</option>
+                            <option value="new">Novos (1 visita)</option>
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                        <table class="w-full text-sm min-w-[480px]">
+                            <thead>
+                                <tr class="border-b border-white/5">
+                                    <th class="text-left py-3 px-3 text-gold">Cliente</th>
+                                    <th class="text-left py-3 px-3 text-gold hidden sm:table-cell">Telefone</th>
+                                    <th class="text-center py-3 px-3 text-gold">Visitas</th>
+                                    <th class="text-right py-3 px-3 text-gold">Total</th>
+                                    <th class="text-center py-3 px-3 text-gold">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crmTable"></tbody>
+                        </table>
+                    </div>
+                    <div id="crmDetail" class="hidden mt-6 sm:mt-8 p-4 sm:p-6 rounded-2xl bg-black/50 border border-gold/20">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 id="crmDetailName" class="text-lg sm:text-xl font-bold gold-text"></h4>
+                            <button onclick="closeCRMDetail()" class="text-gray-500 hover:text-white text-2xl leading-none">&times;</button>
+                        </div>
+                        <div id="crmDetailContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SETTINGS -->
+            <div id="tab-settings" class="dashboard-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <h3 class="font-bold text-gold mb-4 text-sm sm:text-base"><i class="fa-solid fa-lock mr-2"></i>Bloquear Horário</h3>
+                        <div class="space-y-3 sm:space-y-4">
+                            <input type="date" id="blockTimeDate" class="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-base">
+                            <select id="blockTimeSlot" class="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-base">
+                                <option value="">Selecione o horário</option>
+                                <option value="09:00">09:00</option>
+                                <option value="09:40">09:40</option>
+                                <option value="10:20">10:20</option>
+                                <option value="11:00">11:00</option>
+                                <option value="11:40">11:40</option>
+                                <option value="13:40">13:40</option>
+                                <option value="14:20">14:20</option>
+                                <option value="15:00">15:00</option>
+                                <option value="15:40">15:40</option>
+                                <option value="16:20">16:20</option>
+                                <option value="17:00">17:00</option>
+                                <option value="17:40">17:40</option>
+                                <option value="18:20">18:20</option>
+                                <option value="19:00">19:00</option>
+                                <option value="19:40">19:40</option>
+                            </select>
+                            <input type="text" id="blockTimeReason" placeholder="Motivo (opcional)" class="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-base">
+                            <button onclick="blockTimeSlot()" class="w-full bg-red-900/20 text-red-500 border border-red-900/30 py-3 rounded-xl font-bold hover:bg-red-900 hover:text-white transition">Bloquear</button>
+                        </div>
+                        <div id="blockedTimeSlotsList" class="mt-5 sm:mt-6 space-y-2"></div>
+                    </div>
+
+                    <div class="stat-card p-4 sm:p-6 rounded-2xl">
+                        <h3 class="font-bold text-gold mb-4 text-sm sm:text-base"><i class="fa-solid fa-calendar-xmark mr-2"></i>Bloquear Dia</h3>
+                        <div class="space-y-3 sm:space-y-4">
+                            <input type="date" id="blockDate" class="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-base">
+                            <button onclick="blockDate()" class="w-full bg-red-900/20 text-red-500 border border-red-900/30 py-3 rounded-xl font-bold hover:bg-red-900 hover:text-white transition">Bloquear Dia</button>
+                        </div>
+                        <div id="blockedDatesList" class="mt-5 sm:mt-6 space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WHATSAPP FLOATING BUTTON -->
+    <a href="https://wa.me/5521994326788?text=Olá!%20Vim%20pelo%20site%20e%20tenho%20uma%20dúvida%20😊"
+       target="_blank" rel="noopener noreferrer"
+       class="whatsapp-fab" aria-label="Falar com o barbeiro no WhatsApp">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.855L.057 23.215a.75.75 0 0 0 .916.932l5.556-1.453A11.938 11.938 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.71 9.71 0 0 1-4.953-1.355l-.355-.21-3.676.962.983-3.585-.23-.368A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+        </svg>
+        <span class="whatsapp-fab-label">Falar com barbeiro</span>
+    </a>
+
+    <script>
+        window.TIME_SLOTS = [
+            "09:00","09:40","10:20","11:00","11:40",
+            "13:40","14:20","15:00","15:40","16:20",
+            "17:00","17:40","18:20","19:00","19:40"
+        ];
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
